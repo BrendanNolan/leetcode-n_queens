@@ -43,8 +43,7 @@ mod queen_placer_impl {
                     }
                 }
                 if self.found_solution() {
-                    solutions.push(self.queen_positions.clone());
-                    first_possible_column = Column(0);
+                    self.record_solution(&mut solutions);
                 }
                 match self.backtrack() {
                     Some(column) => first_possible_column = column,
@@ -52,6 +51,11 @@ mod queen_placer_impl {
                 }
             }
             solutions
+        }
+
+        fn record_solution(&self, solutions: &mut Vec<Vec<Square>>) {
+            assert_eq!(self.queen_positions.len(), self.size);
+            solutions.push(self.queen_positions.clone());
         }
 
         fn found_solution(&self) -> bool {
