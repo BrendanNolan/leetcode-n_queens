@@ -38,16 +38,17 @@ mod queen_placer_impl {
             loop {
                 if let Some(row) = self.next_row_for_placement() {
                     if self.attempt_to_place_queen_on_row(row, first_possible_column) {
+                        first_possible_column = Column(0);
                         continue;
                     }
-                }
-                match self.backtrack() {
-                    Some(column) => first_possible_column = column,
-                    None => break,
                 }
                 if self.found_solution() {
                     solutions.push(self.queen_positions.clone());
                     first_possible_column = Column(0);
+                }
+                match self.backtrack() {
+                    Some(column) => first_possible_column = column,
+                    None => break,
                 }
             }
             solutions
