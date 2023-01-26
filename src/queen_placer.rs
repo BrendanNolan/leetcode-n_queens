@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 #[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
 pub struct Row(pub usize);
 
@@ -18,60 +16,79 @@ impl Square {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-enum SquareStatus {
-    Occupied,
-    Available,
-    Attacked,
-}
+mod queen_placer_impl {
+    use super::*;
 
-struct QueenPlacer {
-    queen_positions: Vec<Square>,
-    size: usize,
-    columns_available: HashSet<Column>,
-}
+    pub struct QueenPlacer {
+        queen_positions: Vec<Square>,
+        size: usize,
+    }
 
-impl QueenPlacer {
-    fn new(size: usize) -> Self {
-        QueenPlacer {
-            queen_positions: Vec::new(),
-            size,
-            columns_available: (0..size).map(Column).collect(),
+    impl QueenPlacer {
+        pub fn new(size: usize) -> Self {
+            QueenPlacer {
+                queen_positions: Vec::new(),
+                size,
+            }
         }
-    }
 
-    fn place_queens(mut self) -> Vec<Square> {
-        // while let Some(row) = self.next_row_for_placement() {}
-        Vec::new()
-    }
-
-    fn next_row_for_placement(&self) -> Option<Row> {
-        let rows_filled = self.queen_positions.len();
-        if rows_filled == self.size {
-            None
-        } else {
-            Some(Row(self.queen_positions.len()))
+        pub fn place_queens(mut self) -> Vec<Vec<Square>> {
+            let mut solutions = Vec::new();
+            while let Some(row) = self.next_row_for_placement() {
+                if !self.attempt_to_place_queen_on_row(row) {
+                    self.backtrack();
+                }
+                if self.found_solution() {
+                    solutions.push(self.queen_positions.clone());
+                }
+            }
+            solutions
         }
-    }
 
-    fn place_queen(&mut self, square: &Square) {
-        assert!(square.row == Row(self.queen_positions.len()));
-        assert!(self.can_place_queen_at(square));
-        self.columns_available.remove(&square.column);
-        self.queen_positions.push(*square);
-    }
+        fn found_solution(&self) -> bool {
+            self.queen_positions.len() == self.size
+        }
 
-    fn can_place_queen_at(&self, square: &Square) -> bool {
-        self.queen_positions
-            .iter()
-            .any(|existing_queen| queens_tolerate_each_other(existing_queen, square))
-    }
+        fn next_row_for_placement(&self) -> Option<Row> {
+            let rows_filled = self.queen_positions.len();
+            if rows_filled == self.size {
+                None
+            } else {
+                Some(Row(self.queen_positions.len()))
+            }
+        }
 
-    fn remove_last_queen(&mut self) -> Square {
-        assert!(!self.queen_positions.is_empty());
-        let square = self.queen_positions.pop().unwrap();
-        self.columns_available.insert(square.column);
-        square
+        fn attempt_to_place_queen_on_row(&mut self, row: Row) -> bool {
+            for column in 0..self.size {
+                let square = Square::new(row, Column(column));
+                if self.can_place_queen_at(&square) {
+                    self.place_queen(&square);
+                    return true;
+                }
+            }
+            false
+        }
+
+        fn place_queen(&mut self, square: &Square) {
+            assert!(square.row == Row(self.queen_positions.len()));
+            assert!(self.can_place_queen_at(square));
+            self.queen_positions.push(*square);
+        }
+
+        fn can_place_queen_at(&self, square: &Square) -> bool {
+            self.queen_positions
+                .iter()
+                .any(|existing_queen| queens_tolerate_each_other(existing_queen, square))
+        }
+
+        fn backtrack(&mut self) -> Option<Column> {
+            let last_queen = self.queen_positions.pop()?;
+            if last_queen.column == Column(self.size) {
+                self.backtrack()
+            } else {
+                Some(last_queen.column)
+            }
+        }
     }
 }
 
@@ -83,8 +100,8 @@ fn queens_tolerate_each_other(queen_a: &Square, queen_b: &Square) -> bool {
         == (queen_a.column.0 as i32 - queen_b.column.0 as i32).abs()
 }
 
-pub fn place_queens(size: usize) -> Vec<Square> {
-    let placer = QueenPlacer::new(size);
+pub fn place_queens(size: usize) -> Vec<Vec<Square>> {
+    let placer = queen_placer_impl::QueenPlacer::new(size);
     placer.place_queens()
 }
 
