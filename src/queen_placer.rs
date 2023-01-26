@@ -34,12 +34,20 @@ mod queen_placer_impl {
 
         pub fn place_queens(mut self) -> Vec<Vec<Square>> {
             let mut solutions = Vec::new();
-            while let Some(row) = self.next_row_for_placement() {
-                if !self.attempt_to_place_queen_on_row(row) {
-                    self.backtrack();
+            let mut first_possible_column = Column(0);
+            loop {
+                if let Some(row) = self.next_row_for_placement() {
+                    if self.attempt_to_place_queen_on_row(row, first_possible_column) {
+                        continue;
+                    }
+                }
+                match self.backtrack() {
+                    Some(column) => first_possible_column = column,
+                    None => break,
                 }
                 if self.found_solution() {
                     solutions.push(self.queen_positions.clone());
+                    first_possible_column = Column(0);
                 }
             }
             solutions
@@ -58,8 +66,12 @@ mod queen_placer_impl {
             }
         }
 
-        fn attempt_to_place_queen_on_row(&mut self, row: Row) -> bool {
-            for column in 0..self.size {
+        fn attempt_to_place_queen_on_row(
+            &mut self,
+            row: Row,
+            first_possible_column: Column,
+        ) -> bool {
+            for column in first_possible_column.0..self.size {
                 let square = Square::new(row, Column(column));
                 if self.can_place_queen_at(&square) {
                     self.place_queen(&square);
@@ -78,7 +90,7 @@ mod queen_placer_impl {
         fn can_place_queen_at(&self, square: &Square) -> bool {
             self.queen_positions
                 .iter()
-                .any(|existing_queen| queens_tolerate_each_other(existing_queen, square))
+                .all(|existing_queen| queens_tolerate_each_other(existing_queen, square))
         }
 
         fn backtrack(&mut self) -> Option<Column> {
@@ -86,7 +98,7 @@ mod queen_placer_impl {
             if last_queen.column == Column(self.size) {
                 self.backtrack()
             } else {
-                Some(last_queen.column)
+                Some(Column(last_queen.column.0 + 1))
             }
         }
     }
@@ -108,10 +120,18 @@ pub fn place_queens(size: usize) -> Vec<Vec<Square>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_queens_attack() {
         let queen_a = Square::new(Row(0), Column(1));
         let queen_b = Square::new(Row(2), Column(3));
         assert!(queens_tolerate_each_other(&queen_a, &queen_b));
+    }
+
+    #[test]
+    fn test_placing_four_queens() {
+        let queen_positions = place_queens(4);
+        println!("{queen_positions:#?}");
+        assert_eq!(queen_positions.len(), 2);
     }
 }
