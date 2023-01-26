@@ -1,12 +1,6 @@
-use crate::board::{Board, Column, Row, Square};
-
-mod board;
+mod queen_placer;
 
 fn main() {
-    let b = Board::new(3);
-    let status = b.status(&Square {
-        row: Row(0),
-        column: Column(0),
-    });
-    println!("Square is available: {status:#?}");
+    let queen_positions = queen_placer::place_queens(10);
+    println!("{queen_positions:#?}")
 }
