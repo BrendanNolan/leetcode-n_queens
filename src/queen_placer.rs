@@ -88,14 +88,15 @@ mod queen_placer_impl {
         }
 
         fn can_place_queen_at(&self, square: &Square) -> bool {
-            self.queen_positions
+            !self
+                .queen_positions
                 .iter()
-                .all(|existing_queen| queens_tolerate_each_other(existing_queen, square))
+                .any(|existing_queen| queens_attack(existing_queen, square))
         }
 
         fn backtrack(&mut self) -> Option<Column> {
             let last_queen = self.queen_positions.pop()?;
-            if last_queen.column == Column(self.size) {
+            if last_queen.column == Column(self.size - 1) {
                 self.backtrack()
             } else {
                 Some(Column(last_queen.column.0 + 1))
@@ -104,7 +105,7 @@ mod queen_placer_impl {
     }
 }
 
-fn queens_tolerate_each_other(queen_a: &Square, queen_b: &Square) -> bool {
+fn queens_attack(queen_a: &Square, queen_b: &Square) -> bool {
     if queen_a.row == queen_b.row || queen_a.column == queen_b.column {
         return true;
     }
@@ -125,7 +126,7 @@ mod tests {
     fn test_queens_attack() {
         let queen_a = Square::new(Row(0), Column(1));
         let queen_b = Square::new(Row(2), Column(3));
-        assert!(queens_tolerate_each_other(&queen_a, &queen_b));
+        assert!(queens_attack(&queen_a, &queen_b));
     }
 
     #[test]
